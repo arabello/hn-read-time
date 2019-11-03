@@ -1,0 +1,25 @@
+{
+    "name": "Hacker News Read Time",
+    "version": "0.0.1",
+    "description": "Enhance your HN user experience with article read time preview.",
+    "manifest_version": 2,
+    "content_scripts": [
+        {
+            "run_at":"document_end",
+            "js":[
+                "vendor/js/jquery-3.4.1.slim.min.js",
+                "js/HNReadTime.js"
+            ],
+            "matches": [
+                "http://news.ycombinator.com/*",
+                "https://news.ycombinator.com/*",
+                "http://news.ycombinator.net/*",
+                "https://news.ycombinator.net/*",
+                "http://hackerne.ws/*",
+                "https://hackerne.ws/*",
+                "http://news.ycombinator.org/*",
+                "https://news.ycombinator.org/*"
+            ]
+        }
+    ]
+}
