@@ -1,19 +1,37 @@
 $(document).ready(function(){
     let eng = HNReadTime();
 
-    let port = chrome.runtime.connect({name: "crawler"});
-    port.postMessage({url: "https://medium.com/@marksaroufim/how-to-turn-physics-into-an-optimization-problem-11b3fbf83062"})
-    port.onMessage.addListener( msg => {
-        console.log(MetricsTask(msg.resp, 265));
-    } );
-})
+    })
 
 const HNReadTime = (options) => {
     let _opts = {wpm: 265};
     Object.assign(_opts, options);
+    
+    let urls = $.map($('.storylink'), (elem) => $(elem).attr('href'));
+    fetchTask(urls, (id, payload) => {
+        let metrics = getMetrics(payload, _opts.wpm);
+        console.log(id, metrics);
+    });
 };
 
-const MetricsTask = (htmlString, wpm) => {
+const fetchTask = (urls, onProgress, onFinish) => {
+    let start = Date.now();
+    let port = chrome.runtime.connect({name: "hn-read-time"});
+    $.each(urls, (i, elem) => {
+        port.postMessage({id: i, url: elem});
+        port.onMessage.addListener( msg => {
+            if (i !== msg.id)
+                return;
+
+            if (onProgress)
+                onProgress(i, msg.payload);
+        });
+    });
+    if (onFinish) 
+        onFinish(Date.now() - start);
+}
+
+const getMetrics = (htmlString, wpm) => {
     let _parser = new DOMParser();
     let _html = _parser.parseFromString(htmlString, 'text/html');
     let _body = $(_html.getElementsByTagName('body')[0]);
