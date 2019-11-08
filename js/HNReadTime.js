@@ -1,18 +1,25 @@
 $(document).ready(function(){
     let eng = HNReadTime();
-
-    })
+    eng.crawl();
+})
 
 const HNReadTime = (options) => {
     let _opts = {wpm: 265};
     Object.assign(_opts, options);
     
-    let news = $('.athing');
-    let urls = $.map(news.find('.storylink'), (elem) => $(elem).attr('href'));
-    fetchTask(urls, result => {
-        let metrics = getMetrics(result.payload, _opts.wpm);
-        console.log(result.url + ' ' + metrics.wordsReadTime + ' ' + metrics.crawledReadTime);
-    });
+    let athings = $('.athing');
+    console.log(athings);
+    let news = $.map(athings, elem => ({
+        athing: elem, 
+        url: $(elem).find('.storylink').first().attr('href')
+    }));
+
+    return {
+        crawl: () => fetchTask(
+            news.map(n => n.url), 
+            result => news.forEach(n => Object.assign(n, getMetrics(result.payload, _opts.wpm)))
+        )
+    }
 };
 
 const fetchTask = (urls, onProgress, onFinish) => {
@@ -24,12 +31,13 @@ const fetchTask = (urls, onProgress, onFinish) => {
             if (i !== msg.id)
                 return;
 
-            if (onProgress)
+            if (onProgress){
                 onProgress({id: i, url: elem, payload: msg.payload});
+                if (onFinish && i == urls.length -1)
+                    onFinish(Date.now() - start);
+            }
         });
     });
-    if (onFinish) 
-        onFinish(Date.now() - start);
 }
 
 const getMetrics = (htmlString, wpm) => {
