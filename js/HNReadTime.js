@@ -7,7 +7,13 @@ const HNReadTime = (options) => {
         wpm: 265
     }, options);
     let crawler = ReadTimeCrawler(_opts.wpm);
-    crawler.crawl(news => console.log(news));
+    crawler.crawl(news => news.forEach(n => {
+        console.log(n);
+        let badgeContent = n.crawledReadTime || n.wordsReadTime;
+        let badge = $("<td class='hnrt-badge'>"+ badgeContent  +"</td>");
+
+        $(n.athing).append(badge);
+    }));
 };
 
 const ReadTimeCrawler = (wpm) => {
@@ -20,15 +26,19 @@ const ReadTimeCrawler = (wpm) => {
     let fetchTask = (urls, onProgress, onFinish) => {
         let start = Date.now();
         let port = chrome.runtime.connect({name: "hn-read-time"});
+        var stop = urls.length;
+
         $.each(urls, (i, elem) => {
             port.postMessage({id: i, url: elem});
             port.onMessage.addListener( msg => {
                 if (i !== msg.id)
                     return;
+                
+                stop--;
 
                 if (onProgress){
                     onProgress({id: i, url: elem, payload: msg.payload});
-                    if (onFinish && i == urls.length -1)
+                    if (onFinish && stop == 0)
                         onFinish(Date.now() - start);
                 }
             });
