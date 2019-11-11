@@ -7,13 +7,12 @@ const HNReadTime = (options) => {
         wpm: 265
     }, options);
     let crawler = ReadTimeCrawler(_opts.wpm);
-    crawler.crawl(news => news.forEach(n => {
-        console.log(n);
+    crawler.crawl(n => {
         let badgeContent = n.crawledReadTime || n.wordsReadTime;
         let badge = $("<td class='hnrt-badge'>"+ badgeContent  +"</td>");
 
         $(n.athing).append(badge);
-    }));
+    }, (news, millis) => console.log('Crawling done in ' + millis));
 };
 
 const ReadTimeCrawler = (wpm) => {
@@ -83,10 +82,14 @@ const ReadTimeCrawler = (wpm) => {
     }
 
     return {
-        crawl: (onComplete) => fetchTask(
+        crawl: (onProgress, onComplete) => fetchTask(
             news.map(n => n.url), 
-            result => news[result.id] = Object.assign(news[result.id], getMetrics(result.payload, wpm)),
-            millis => onComplete(news)
+            result => {
+                news[result.id] = Object.assign(news[result.id], getMetrics(result.payload, wpm));
+                if (onProgress)
+                    onProgress(news[result.id]);
+            },
+            millis => onComplete ? onComplete(news, millis) : {}
         )
     }
 }
