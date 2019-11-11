@@ -1,4 +1,6 @@
 .hnrt-badge {
-  color: red; }
+  color: #636366; }
+  .hnrt-badge.hnrt-crawled {
+    text-decoration: underline; }
 
 /*# sourceMappingURL=build.css.map */

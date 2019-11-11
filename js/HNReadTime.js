@@ -4,15 +4,29 @@ $(document).ready(function(){
 
 const HNReadTime = (options) => {
     let _opts = Object.assign({
-        wpm: 265
+        wpm: 265,
+        animDuration: 350,
+        placeholder: "¯\\_(ツ)_/¯"
     }, options);
-    let crawler = ReadTimeCrawler(_opts.wpm);
-    crawler.crawl(n => {
-        let badgeContent = n.crawledReadTime || n.wordsReadTime;
-        let badge = $("<td class='hnrt-badge'>"+ badgeContent  +"</td>");
 
+    let onDataReady = n => {
+        let badgeClasses = ['hnrt-badge']
+        let badgeContent = n.crawledReadTime || n.wordsReadTime;
+        
+        if (badgeContent == null)
+            badgeContent = _opts.placeholder;
+
+        if (n.crawledReadTime)
+            badgeClasses.push('hnrt-crawled');
+
+        let badge = $("<td class='"+ badgeClasses.join(' ')  +"' align='right'>"+ badgeContent  +"</td>");
+
+        $(badge).hide().fadeIn(_opts.animDuration);
         $(n.athing).append(badge);
-    }, (news, millis) => console.log('Crawling done in ' + millis));
+    }
+
+    let crawler = ReadTimeCrawler(_opts.wpm);
+    crawler.crawl(onDataReady, (news, millis) => console.log('Crawling done in ' + millis));
 };
 
 const ReadTimeCrawler = (wpm) => {

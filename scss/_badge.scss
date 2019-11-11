@@ -1,3 +1,7 @@
 .hnrt-badge{
-    color: red;
+    color: $primary-text;
+
+    &.hnrt-crawled{
+        text-decoration: underline;
+    }
 }

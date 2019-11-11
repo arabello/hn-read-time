@@ -15,6 +15,9 @@
                 "vendor/js/jquery-3.4.1.min.js",
                 "js/HNReadTime.js"
             ],
+            "css":[
+                "css/build.css"
+            ],
             "matches": [
                 "http://news.ycombinator.com/*",
                 "https://news.ycombinator.com/*",
