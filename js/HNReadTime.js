@@ -1,32 +1,26 @@
-$(document).ready( () => chrome.storage.sync.get(['options'], result => {
-        let eng = HNReadTime(result.key);
+$(document).ready( () => chrome.storage.sync.get(null, options => {
+        let eng = HNReadTime(options);
     })
 );
 
-const HNReadTime = (options) => {
-    let _opts = Object.assign({
-        wpm: 265,
-        animDuration: 350,
-        placeholder: "¯\\_(ツ)_/¯"
-    }, options);
-
+const HNReadTime = (opts) => {
     let onDataReady = n => {
         let badgeClasses = ['hnrt-badge']
         let badgeContent = n.crawledReadTime || n.wordsReadTime;
         
         if (badgeContent == null)
-            badgeContent = _opts.placeholder;
+            badgeContent = opts.placeholder;
 
         if (n.crawledReadTime)
             badgeClasses.push('hnrt-crawled');
 
         let badge = $("<td class='"+ badgeClasses.join(' ')  +"' align='right'>"+ badgeContent  +"</td>");
 
-        $(badge).hide().fadeIn(_opts.animDuration);
+        $(badge).hide().fadeIn(opts.animDuration);
         $(n.athing).append(badge);
     }
 
-    let crawler = ReadTimeCrawler(_opts.wpm);
+    let crawler = ReadTimeCrawler(opts.wpm);
     crawler.crawl(onDataReady, (news, millis) => console.log('Crawling done in ' + millis));
 };
 
