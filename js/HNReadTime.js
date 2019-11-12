@@ -1,6 +1,7 @@
-$(document).ready(function(){
-    let eng = HNReadTime();
-})
+$(document).ready( () => chrome.storage.sync.get(['options'], result => {
+        let eng = HNReadTime(result.key);
+    })
+);
 
 const HNReadTime = (options) => {
     let _opts = Object.assign({
