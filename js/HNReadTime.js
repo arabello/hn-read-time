@@ -30,7 +30,7 @@ const HNReadTime = (options) => {
 };
 
 const ReadTimeCrawler = (wpm) => {
-    let athings = $('.athing');
+    let athings = $("tr[class='athing']");
     let news = $.map(athings, elem => ({
         athing: elem, 
         url: $(elem).find('.storylink').first().attr('href')
