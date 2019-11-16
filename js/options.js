@@ -1,18 +1,55 @@
 $(document).ready(() => {
-    let render = OptionsRender();
+    let render = OptionsRender($('#options-container'));
     chrome.storage.sync.get(null, opts =>{
-        render.render(opts, 'container');
+        render.render(opts);
     });
 });
 
-const OptionsRender = () => {
-    let factory = FormFactory();
+const OptionsRender = (target) => {
+    let _factory = FormFactory();
+    let _createSetting = (id, setting) => {
+        let isAdvancedClass = setting.is_advanced ? 'is-advanced' : '';
+        return _factory.makeFormGroup(
+            _factory.makeLabel(id, setting.title, ['col-8']),
+            _factory.makeInput(id, setting.value, ['col-4']),
+            [isAdvancedClass]
+        )
+    }
+
+    let _addAdvanceBtn = (form) =>{
+        let advBtnGroup =_factory.makeFormGroup(
+            _factory.makeLabel('adv-btn', 'Show advanced settings', ['col-8']),
+            _factory.makeInput('adv-btn', '', [], 'checkbox')
+        );
+
+        $(form).prepend(advBtnGroup);
+        $(form).find('#adv-btn').first().bootstrapToggle({
+            on: 'Advanced',
+            off: 'Basic',
+            style: 'col-2'
+        });
+        $(form).find('#adv-btn').first().change(()=>_showAdvanced($("#adv-btn").prop('checked')));
+        return $(form).find('#adv-btn');
+    }
+
+    let _showAdvanced = show => {
+        if (show){
+            $(target).find('.is-advanced').removeClass('d-none');
+        }else{
+            $(target).find('.is-advanced').addClass('d-none');
+        }
+    }
 
     return {
-        render: (opts, idTarget) => $('#'+idTarget).append(Object.keys(opts).map(k => factory.makeFormGroup(
-            factory.makeLabel(k, opts[k].title, ['col-8']),
-            factory.makeInput(k, opts[k].value, ['col-4'])
-        )))
+        render: (opts) => {
+            $(target).empty();
+            let settings = Object.keys(opts).map(k => _createSetting(k, opts[k]))
+            let form = _factory.makeForm(settings);
+            let advBtn = _addAdvanceBtn(form);
+            $(target).append(form);
+            _showAdvanced(advBtn.prop('checked'))
+        },
+        showAdvanced: show => _showAdvanced(show)
     }
 }
 
@@ -27,11 +64,12 @@ const FormFactory = () => ({
     makeLabel: (forwho, content, classes=[]) =>
         $('<label></label>')
         .attr('for', forwho)
-        .addClass(classes.concat('col-form-label'))
+        .addClass(classes.concat('col-form-label').join(' '))
         .text(content),
 
-    makeFormGroup: (label, input) =>
+    makeFormGroup: (label, input, classes=[]) =>
         $("<div class='form-group row'></div>")
+        .addClass(classes.join(' '))
         .append(label)
         .append(input),
 
