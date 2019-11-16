@@ -9,10 +9,12 @@ const OptionsRender = (target) => {
     let _factory = FormFactory();
     let _createSetting = (id, setting) => {
         let isAdvancedClass = setting.is_advanced ? 'is-advanced' : '';
+        let label = _factory.makeLabel(id, setting.title, ['col-8']);
+        $(label).append('<p>'+setting.desc+'</p>');
         return _factory.makeFormGroup(
-            _factory.makeLabel(id, setting.title, ['col-8']),
-            _factory.makeInput(id, setting.value, ['col-4']),
-            [isAdvancedClass]
+            label,
+            _factory.makeInput(id, setting.value, ['col-4'], setting.type),
+            [isAdvancedClass, 'hnrt-sett']
         )
     }
 

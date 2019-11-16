@@ -1,17 +1,20 @@
 let storage = {
     wpm: {
+        type: "number",
         value: 265,
         is_advanced: true,
         title: "Words per minute",
-        desc: "Used by the engine to estimate the read time based on the article webpage content"
+        desc: "Affect the article read time estimation"
     },
     animDuration: {
+        type: "number",
         value: 350,
         is_advanced: false,
         title: "Animation duration",
         desc: "Smooth data entrance in millis"
     },
     placeholder: {
+        type: "text",
         value: "¯\\_(ツ)_/¯",
         is_advanced: false,
         title: "Error placeholder",

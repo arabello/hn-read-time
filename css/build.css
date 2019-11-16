@@ -3,4 +3,10 @@
   .hnrt-badge.hnrt-crawled {
     text-decoration: underline; }
 
+.hnrt-sett > label {
+  font-weight: bold; }
+  .hnrt-sett > label > p {
+    font-weight: normal;
+    font-size: 0.9rem; }
+
 /*# sourceMappingURL=build.css.map */
