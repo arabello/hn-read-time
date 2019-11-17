@@ -1,5 +1,8 @@
 $(document).ready(() => {
     let render = OptionsRender($('#options-container'));
+    render.onSave(newOpts =>
+        chrome.storage.sync.set(newOpts, () => render.render(newOpts))
+    );
     chrome.storage.sync.get(null, opts =>{
         render.render(opts);
     });
@@ -42,12 +45,31 @@ const OptionsRender = (target) => {
         }
     }
 
+    let _getNewOptions = opts => {
+        let newOptions = {}
+        Object.assign(newOptions, opts);
+        for(let key in newOptions){
+            let id = '#'+key
+            newOptions[key].value = $(id).val();
+        }
+        return newOptions;
+    }
+
+    var _onSaveHandler = () => {};
+
     return {
+        onSave: (callbak) => _onSaveHandler = callbak,
         render: (opts) => {
             $(target).empty();
             let settings = Object.keys(opts).map(k => _createSetting(k, opts[k]))
             let form = _factory.makeForm(settings);
             let advBtn = _addAdvanceBtn(form);
+            let saveBtn = _factory.makeFormGroup(
+                _factory.makeLabel('save-btn', '', ['col-8']),
+                _factory.makeInput('save-btn', 'Save', ['col-4', 'btn btn-success'], 'button')
+            );
+            saveBtn.on('click', () => _onSaveHandler(_getNewOptions(opts)));
+            $(form).append(saveBtn);
             $(target).append(form);
             _showAdvanced(advBtn.prop('checked'))
         },
