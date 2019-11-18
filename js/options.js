@@ -1,17 +1,21 @@
 $(document).ready(() => {
     let render = OptionsRender($('#options-container'));
     render.onSave(newOpts =>
-        chrome.storage.sync.set(newOpts, () => render.render(newOpts))
+        chrome.storage.sync.set({'userSettings': newOpts}, () => console.log(newOpts))
     );
-    chrome.storage.sync.get(null, opts =>{
-        render.render(opts);
+    chrome.storage.sync.get('userSettings', storage =>{
+        render.render(storage.userSettings);
     });
 });
 
 const OptionsRender = (target) => {
+    let _state = {
+        showAdvancedSettings: false
+    }
+
     let _factory = FormFactory();
     let _createSetting = (id, setting) => {
-        let isAdvancedClass = setting.is_advanced ? 'is-advanced' : '';
+        let isAdvancedClass = setting.isAdvanced ? 'is-advanced' : '';
         let label = _factory.makeLabel(id, setting.title, ['col-8']);
         $(label).append('<p>'+setting.desc+'</p>');
         return _factory.makeFormGroup(
@@ -38,6 +42,7 @@ const OptionsRender = (target) => {
     }
 
     let _showAdvanced = show => {
+        _state.showAdvancedSettings = show;
         if (show){
             $(target).find('.is-advanced').removeClass('d-none');
         }else{
@@ -50,9 +55,17 @@ const OptionsRender = (target) => {
         Object.assign(newOptions, opts);
         for(let key in newOptions){
             let id = '#'+key
-            newOptions[key].value = $(id).val();
+            newOptions[key].value = $(id).attr('type') == 'number' ? parseInt($(id).val()) : $(id).val();
         }
         return newOptions;
+    }
+
+    let _setNewOptions = newOptions => {
+        console.log(newOptions);
+        for(let key in newOptions){
+            let id = '#'+key
+            $(id).val(newOptions[key].value);
+        }
     }
 
     var _onSaveHandler = () => {};

@@ -1,6 +1,7 @@
-$(document).ready( () => chrome.storage.sync.get(null, storage => {
-        Object.keys(storage).map((k,i) => storage[k] = storage[k].value);
-        let eng = HNReadTime(storage);
+$(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
+        let userSettings = storage.userSettings;
+        Object.keys(userSettings).map((k,i) => userSettings[k] = userSettings[k].value);
+        let eng = HNReadTime(userSettings);
     })
 );
 
