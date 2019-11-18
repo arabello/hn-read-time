@@ -1,14 +1,12 @@
 $(document).ready(() => {
-    let render = OptionsRender($('#options-container'));
-    render.onSave(newOpts =>
-        chrome.storage.sync.set({'userSettings': newOpts}, () => console.log(newOpts))
-    );
-    chrome.storage.sync.get('userSettings', storage =>{
+    chrome.storage.sync.get(['defaultSettings', 'userSettings'], storage => {
+        let render = OptionsRender(storage.defaultSettings, $('#options-container'));
+        render.onSave(newOpts => chrome.storage.sync.set({'userSettings': newOpts}, () => console.log('Data saved!')));
         render.render(storage.userSettings);
     });
 });
 
-const OptionsRender = (target) => {
+const OptionsRender = (defaultSettings, target) => {
     let _state = {
         showAdvancedSettings: false
     }
@@ -61,11 +59,17 @@ const OptionsRender = (target) => {
     }
 
     let _setNewOptions = newOptions => {
-        console.log(newOptions);
         for(let key in newOptions){
             let id = '#'+key
             $(id).val(newOptions[key].value);
         }
+    }
+
+    let _showMessage = (message, alertType) => {
+        $(target).find('.msg').remove();
+        let msg = $('<div></div>').addClass('msg alert alert-'+alertType).text(message);
+        $(target).append(msg);
+        $(msg).hide().fadeIn(400).delay(2500).fadeOut(150, function(){$(this).remove()});
     }
 
     var _onSaveHandler = () => {};
@@ -77,12 +81,25 @@ const OptionsRender = (target) => {
             let settings = Object.keys(opts).map(k => _createSetting(k, opts[k]))
             let form = _factory.makeForm(settings);
             let advBtn = _addAdvanceBtn(form);
-            let saveBtn = _factory.makeFormGroup(
-                _factory.makeLabel('save-btn', '', ['col-8']),
-                _factory.makeInput('save-btn', 'Save', ['col-4', 'btn btn-success'], 'button')
+            let saveBtn = _factory.makeButton(
+                'save-btn',
+                'Save', 
+                () => {
+                    _onSaveHandler(_getNewOptions(opts));
+                    _showMessage('Settings saved successfully!', 'success')
+                }, 
+                ['col-3 offset-6', 'btn btn-success']
             );
-            saveBtn.on('click', () => _onSaveHandler(_getNewOptions(opts)));
-            $(form).append(saveBtn);
+            let restoreBtn = _factory.makeButton(
+                'restore-btn',
+                'Restore', 
+                () => {
+                    _setNewOptions(defaultSettings);
+                    _showMessage('Settings restored, save to apply changes!', 'info');
+                },
+                ['col-3', 'btn btn-info']
+            );
+            $(form).append(_factory.makeFormGroupFree(restoreBtn, saveBtn));
             $(target).append(form);
             _showAdvanced(advBtn.prop('checked'))
         },
@@ -91,6 +108,12 @@ const OptionsRender = (target) => {
 }
 
 const FormFactory = () => ({
+    makeButton: (id, label='', onclick=()=>{}, classes=[]) =>
+        $('<button>'+label+'</button>')
+        .attr('id' , id)
+        .addClass(classes.concat('btn').join(' '))
+        .on('click', onclick),
+
     makeInput: (id, value='', classes=[], type='text') => 
         $('<input>')
         .attr('id' , id)
@@ -104,6 +127,12 @@ const FormFactory = () => ({
         .addClass(classes.concat('col-form-label').join(' '))
         .text(content),
 
+    makeFormGroupFree: (...children) => {
+        let grp = $("<div class='form-group row'></div>");
+        $.each(children, (i, elem) => $(grp).append(elem.addClass('form-control')));
+        return grp;
+    },
+
     makeFormGroup: (label, input, classes=[]) =>
         $("<div class='form-group row'></div>")
         .addClass(classes.join(' '))
@@ -113,6 +142,7 @@ const FormFactory = () => ({
     makeForm: (...formGroups) => {
         let form = $("<form></form>");
         formGroups.forEach(x => $(form).append(x));
+        $(form).submit(false);
         return $(form);
     }
 })
