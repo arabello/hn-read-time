@@ -2,12 +2,22 @@ $(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
         let userSettings = storage.userSettings;
         Object.keys(userSettings).map((k,i) => userSettings[k] = userSettings[k].value);
         let eng = HNReadTime(userSettings);
+        
+        chrome.runtime.onMessage.addListener(
+          function(request, sender, sendResponse) {
+            console.log(sender.tab ?
+                        "from a content script:" + sender.tab.url :
+                        "from the extension");
+            if (request.greeting == "hello")
+              sendResponse({farewell: "goodbye"});
+          });
     })
 );
 
 const HNReadTime = (opts) => {
-    let onDataReady = n => {
-        let badgeClasses = ['hnrt-badge']
+    let _itemClass = 'hnrt-badge';
+    let _onDataReady = n => {
+        let badgeClasses = [_itemClass]
         let badgeContent = n.crawledReadTime || n.wordsReadTime;
         
         if (badgeContent == null)
@@ -22,8 +32,20 @@ const HNReadTime = (opts) => {
         $(n.athing).append(badge);
     }
 
-    let crawler = ReadTimeCrawler(opts.wpm);
-    crawler.crawl(onDataReady, (news, millis) => console.log('Crawling done in ' + millis));
+    let _crawler = ReadTimeCrawler(opts.wpm);
+    _crawler.crawl(_onDataReady, (news, millis) => console.log('Crawling done in ' + millis));
+
+    let _setVisibility = (visible) => {
+        if (visibile)
+            $('.'+_itemClass).hide();
+        else
+            $('.'+_itemClass).show();
+    }
+
+    return {
+        show: () => _setVisibility(true),
+        hide: () => _setVisibility(false)
+    }
 };
 
 const ReadTimeCrawler = (wpm) => {
@@ -35,7 +57,7 @@ const ReadTimeCrawler = (wpm) => {
 
     let fetchTask = (urls, onProgress, onFinish) => {
         let start = Date.now();
-        let port = chrome.runtime.connect({name: "hn-read-time"});
+        let port = chrome.runtime.connect({name: "content-script"});
         var stop = urls.length;
 
         $.each(urls, (i, elem) => {

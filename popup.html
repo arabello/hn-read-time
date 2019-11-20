@@ -3,11 +3,24 @@
         <title>Hacker News Read Time</title>
         <link rel='stylesheet' href='vendor/css/bootstrap.min.css'>
         <link rel='stylesheet' href='css/build.css'>
+        <link href="vendor/css/bootstrap4-toggle.min.css" rel="stylesheet">
     </head>
-    <body>
-        <button id="btn-options" type="button" class="btn btn-link">Options</button>
+    <body class='hnrt-popup'>
+
+        <div class="container">
+            <div class="row d-flex align-items-center">
+                <div class="col-8 text-center">Show read time</div>
+                <input id="btn-enable" class="col-4" type="checkbox" data-toggle="toggle" checked>
+            </div>
+
+            <div class="row justify-content-center">
+                <button id="btn-options" type="button" class="btn btn-link">Options</button>
+            </div>
+        </div>
+
     </body>
     <script src="vendor/js/jquery-3.4.1.min.js" type="text/javascript"></script>
     <script src="vendor/js/bootstrap.min.js" type="text/javascript"></script>
-    <script src="js/popup.js" type="text/javascript"></script>
+    <script src="vendor/js/bootstrap4-toggle.min.js"></script>
+    <script src="js/options.js" type="text/javascript"></script>
 </html>
