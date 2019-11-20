@@ -3,12 +3,15 @@
     "version": "0.0.1",
     "description": "Enhance your HN user experience with article read time preview.",
     "manifest_version": 2,
-    "permissions": ["<all_urls>", "storage"],
+    "permissions": ["<all_urls>", "storage", "declarativeContent"],
     "background":{
         "scripts": ["vendor/js/jquery-3.4.1.min.js", "background.js"],
         "persisten": false
     },
     "options_page": "options.html",
+    "page_action": {
+        "default_popup": "popup.html"
+    },
     "content_scripts": [
         {
             "run_at":"document_end",

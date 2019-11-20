@@ -31,6 +31,16 @@ chrome.runtime.onInstalled.addListener( details => {
         Object.assign(storage['userSettings'], storage['defaultSettings']);
         chrome.storage.sync.set(storage);
     }
+
+    chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
+        let manifest = chrome.runtime.getManifest();
+        chrome.declarativeContent.onPageChanged.addRules([{
+            conditions: [new chrome.declarativeContent.PageStateMatcher({
+                pageUrl: {urlMatches: '(news.ycombinator.(com|net|org))|(hackerne.ws)'}
+            })],
+            actions: [new chrome.declarativeContent.ShowPageAction()]
+        }]);
+    });
 });
 
 chrome.runtime.onConnect.addListener( port => {
