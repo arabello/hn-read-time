@@ -24,6 +24,12 @@ let storage = {
     }
 }
 
+let localStorage = {
+    actions:{
+        enable: true
+    }
+}
+
 let ports = []; // Required avoid port destroying by GB
 
 chrome.runtime.onInstalled.addListener( details => {
@@ -31,6 +37,7 @@ chrome.runtime.onInstalled.addListener( details => {
         storage['userSettings'] = {};
         Object.assign(storage['userSettings'], storage['defaultSettings']);
         chrome.storage.sync.set(storage);
+        chrome.storage.local.set(localStorage);
     }
 
     chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
@@ -43,6 +50,7 @@ chrome.runtime.onInstalled.addListener( details => {
         }]);
     });
 });
+
 
 chrome.runtime.onConnect.addListener( port => {
     ports.push(port);

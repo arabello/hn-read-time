@@ -4,12 +4,11 @@ $(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
         let eng = HNReadTime(userSettings);
 
         eng.render();
-        
-        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-            if (request.enable)
-                eng.refresh();
-            else
-                eng.hide();
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            if (namespace != 'local')
+                return;
+
+            eng.handle(changes['actions'].newValue)
         });
     })
 );
@@ -36,11 +35,16 @@ const HNReadTime = (opts) => {
         if (_visibility)
             _render.render(elem.badge, elem.value, classes);
     }
+
+    let _setVisibility = (value) => {
+        _visibility = value;
+        _data.forEach(e => _visibility ? _update(e) : $(e.badge).fadeOut(opts.animDuration));
+    }
     
     return {
         render: () => _data.forEach(e => _fetch(e, (elem) => _update(elem))),
-        setVisibility: (value) => {
-            _visibility = value;
+        handle: (actions) => {
+            _setVisibility(actions.enable);
         }
     }
 };
