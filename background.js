@@ -24,6 +24,7 @@ let storage = {
     }
 }
 
+let ports = []; // Required avoid port destroying by GB
 
 chrome.runtime.onInstalled.addListener( details => {
     if (details.reason == "install"){
@@ -44,13 +45,14 @@ chrome.runtime.onInstalled.addListener( details => {
 });
 
 chrome.runtime.onConnect.addListener( port => {
+    ports.push(port);
     switch(port.name){
         case "content-script":
             port.onMessage.addListener( msg => {
                 $.ajax({
                     url: msg.url
                 }).done( (data, textStatus, jqXHR) => 
-                    port.postMessage({id: msg.id, payload: data})
+                    port.postMessage({url: msg.url, payload: data})
                 );   
             });
             break;

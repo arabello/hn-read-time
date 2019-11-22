@@ -7,7 +7,7 @@ $(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
         
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (request.enable)
-                eng.show();
+                eng.refresh();
             else
                 eng.hide();
         });
@@ -16,151 +16,109 @@ $(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
 
 const HNReadTime = (opts) => {
     let _crawler = ReadTimeCrawler(opts.wpm);
-    let _isVisible = true;
-    let _itemClass = 'hnrt-badge';
+    let _render = ReadTimeRender('hnrt-badge', opts.placeholder, opts.animDuration);
+    let _data = $.map($("tr[class='athing']"), elem => ({
+        url: $(elem).find('.storylink').first().attr('href'),
+        container: elem
+    }));
 
+    let _init = () => _data.forEach(elem => elem.badge = _render.initTarget(elem.container));
 
-    
-
-    let _onDataReady = n => {
-        let badgeClasses = [];
-        let badgeContent = n.crawledReadTime || n.wordsReadTime;
+    let _update = (elem) => _crawler.crawl(elem.url, metrics => {
+        elem.value = metrics.crawledReadTime || metrics.wordsReadTime;
         
-        if (badgeContent == null)
-            badgeContent = opts.placeholder;
-
-        if (n.crawledReadTime)
+        let badgeClasses = [];
+        if (metrics.crawledReadTime)
             badgeClasses.push('hnrt-crawled');
         
-        let badge = $(n.athing).find('.'+_itemClass)[0];
-        $(badge).addClass(badgeClasses.join(' ')).text(badgeContent);
-        $(badge).hide();
-        
-        if (_isVisible)
-            $(badge).fadeIn(opts.animDuration);
-    }
+        _render.update(elem.badge, elem.value, badgeClasses);
+    });
 
-    let _setVisibility = (visible) => {
-        _isVisible = visible;
-        if (_isVisible)
-            $('.'+_itemClass).show();
-        else
-            $('.'+_itemClass).hide();
-    }
+    let _updateAll = () => _data.forEach(elem => _update(elem));
 
     return {
-        show: () => _setVisibility(true),
-        hide: () => _setVisibility(false),
         render: () => {
-            _clearAndInit(_crawler.targets);
-            _crawler.crawl(_onDataReady, (news, millis) => {});
-        }
+            _init();
+            _updateAll();
+        },
+        refresh: () => _updateAll(),
     }
 };
 
-const ReadTimeRender = (targets, itemClass) => {
-    let _createBadge = (badgeClasses, badgeContent) => $("<td class='"+ badgeClasses.join(' ')  +"' align='right'>"+ badgeContent  +"</td>");
-    let _data = targets.map(t => {target: t, badge: _createBadge([itemClass], ''), value: null});
+const ReadTimeRender = (itemClass, placeholder, animDuration) => {
+    let _createTarget = (classes, content) =>
+        $("<td class='"+ classes.join(' ')  +"' align='right'>"+ content  +"</td>");
 
-    let _init = () => _data.forEach(e => {
-        $(e.target).find(itemClass).remove();
-        $(e.target).each((i, elem) => $(elem).append(e.badge));
-    });
+    let _init = (container) => {
+        $(container).find(itemClass).remove();
+        let target = _createTarget([itemClass], '');
+        $(target).hide();
+        $(container).append(target);
+        return target;
+    };
 
-    let _get = (target) => {
-        _data.forEach(e => if (e === target) return);
-        return null;
+    let _update = (target, value, classes=[]) => {
+        let unit = value ? "'" : '';
+        let content = (value || placeholder) + unit
+        $(target).addClass(classes).text(content);
+        $(target).fadeOut(animDuration/4);
+        $(target).fadeIn(3*animDuration/4);
     }
-    
-    let _update = (target, value) => {
-        _get(target).value = value;
-        let badge = $(n.athing).find('.'+_itemClass)[0];
-        $(badge).addClass(badgeClasses.join(' ')).text(badgeContent);
-        $(badge).hide();
-        
-        if (_isVisible)
-            $(badge).fadeIn(opts.animDuration);
-    }
+
+    return{
+        initTarget: (athing) => _init(athing),
+        update: (target, value) => _update(target, value)
     }
 }
 
 const ReadTimeCrawler = (wpm) => {
-    let athings = $("tr[class='athing']");
-    let news = $.map(, elem => ({
-        athing: elem, 
-        url: $(elem).find('.storylink').first().attr('href')
-    }));
-
-    let fetchTask = (urls, onProgress, onFinish) => {
-        let start = Date.now();
+    let fetchTask = (url, callback) => {
         let port = chrome.runtime.connect({name: "content-script"});
-        var stop = urls.length;
-
-        $.each(urls, (i, elem) => {
-            port.postMessage({id: i, url: elem});
-            port.onMessage.addListener( msg => {
-                if (i !== msg.id)
-                    return;
-                
-                stop--;
-
-                if (onProgress){
-                    onProgress({id: i, url: elem, payload: msg.payload});
-                    if (onFinish && stop == 0)
-                        onFinish(Date.now() - start);
-                }
-            });
-        });
-    }
-
-    let getMetrics = (htmlString, wpm) => {
-        let _wordsRegExp = /\S+/g;
-        let _crawlTimeRegExp = /\d+\smin.?\sread|read\stime\s\d+|\d+\sminutes\sread\stime/i;
-        let _parser = new DOMParser();
-        let _html = _parser.parseFromString(htmlString, 'text/html');
-        let _body = $(_html.getElementsByTagName('body')[0]);
-
-        let _wordsCount = body => {
-            let simpler = body;
-            simpler.find('script, style, link, img').remove();
-            let words = simpler.text().match(_wordsRegExp);
-            return words ? words.length : null
-        }
-       
-        let _hardWordsCount = body => {
-            let tempDOM = $('<div></div>').append(_body);
-            let words = tempDOM.text().match(_wordsRegExp);
-            return words ? words.length : null
-        }
-
-        let _wordsReadTime = wordsCount => Math.round(wordsCount/wpm);
-        let _crawledReadTime = body => {
-            let found = body.text().match(_crawlTimeRegExp);
-            return found ? parseInt(found[0].match(/\d+/)[0]) : null;
-        }
-
-        return {
-            wordsReadTime: (function(){
-                var wordsCount = _wordsCount(_body);
-                if (wordsCount == null)
-                    wordsCount = _hardWordsCount(_body);
-                return wordsCount ? _wordsReadTime(wordsCount) : null;
-            })(),
-            crawledReadTime: _crawledReadTime(_body)
-        }
+        port.postMessage({url: url});
+        port.onMessage.addListener(msg => callback(msg.payload));
     }
 
     return {
-        crawl: (onProgress, onComplete) => fetchTask(
-            news.map(n => n.url), 
-            result => {
-                news[result.id] = Object.assign(news[result.id], getMetrics(result.payload, wpm));
-                if (onProgress)
-                    onProgress(news[result.id]);
-            },
-            millis => onComplete ? onComplete(news, millis) : {}
-        ),
-        targets: 
+        crawl: (url, callback) => fetchTask(
+            url, 
+            payload => callback(ComputeMetrics(payload, wpm))
+        )
     }
 }
 
+const ComputeMetrics = (htmlString, wpm) => {
+    let _wordsRegExp = /\S+/g;
+    let _crawlTimeRegExp = /\d+\smin.?\sread|read\stime\s\d+|\d+\sminutes\sread\stime/i;
+    let _parser = new DOMParser();
+    let _html = _parser.parseFromString(htmlString, 'text/html');
+    let _body = $(_html.getElementsByTagName('body')[0]);
+
+    let _wordsCount = body => {
+        let simpler = body;
+        simpler.find('script, style, link, img').remove();
+        let words = simpler.text().match(_wordsRegExp);
+        return words ? words.length : null
+    }
+   
+    let _hardWordsCount = body => {
+        let tempDOM = $('<div></div>').append(_body);
+        let words = tempDOM.text().match(_wordsRegExp);
+        return words ? words.length : null
+    }
+
+    let _wordsReadTime = wordsCount => Math.round(wordsCount/wpm);
+    let _crawledReadTime = body => {
+        let found = body.text().match(_crawlTimeRegExp);
+        return found ? parseInt(found[0].match(/\d+/)[0]) : null;
+    }
+
+    return {
+        wordsReadTime: (function(){
+            var wordsCount = _wordsCount(_body);
+            if (wordsCount == null)
+                wordsCount = _hardWordsCount(_body);
+            return wordsCount ? _wordsReadTime(wordsCount) : null;
+        })(),
+        crawledReadTime: _crawledReadTime(_body)
+    }
+}
