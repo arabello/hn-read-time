@@ -2,22 +2,28 @@ $(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
         let userSettings = storage.userSettings;
         Object.keys(userSettings).map((k,i) => userSettings[k] = userSettings[k].value);
         let eng = HNReadTime(userSettings);
+
+        eng.render();
         
-        chrome.runtime.onMessage.addListener(
-          function(request, sender, sendResponse) {
-            console.log(sender.tab ?
-                        "from a content script:" + sender.tab.url :
-                        "from the extension");
-            if (request.greeting == "hello")
-              sendResponse({farewell: "goodbye"});
-          });
+        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+            if (request.enable)
+                eng.show();
+            else
+                eng.hide();
+        });
     })
 );
 
 const HNReadTime = (opts) => {
+    let _crawler = ReadTimeCrawler(opts.wpm);
+    let _isVisible = true;
     let _itemClass = 'hnrt-badge';
+
+
+    
+
     let _onDataReady = n => {
-        let badgeClasses = [_itemClass]
+        let badgeClasses = [];
         let badgeContent = n.crawledReadTime || n.wordsReadTime;
         
         if (badgeContent == null)
@@ -25,32 +31,62 @@ const HNReadTime = (opts) => {
 
         if (n.crawledReadTime)
             badgeClasses.push('hnrt-crawled');
-
-        let badge = $("<td class='"+ badgeClasses.join(' ')  +"' align='right'>"+ badgeContent  +"</td>");
-
-        $(badge).hide().fadeIn(opts.animDuration);
-        $(n.athing).append(badge);
+        
+        let badge = $(n.athing).find('.'+_itemClass)[0];
+        $(badge).addClass(badgeClasses.join(' ')).text(badgeContent);
+        $(badge).hide();
+        
+        if (_isVisible)
+            $(badge).fadeIn(opts.animDuration);
     }
 
-    let _crawler = ReadTimeCrawler(opts.wpm);
-    _crawler.crawl(_onDataReady, (news, millis) => console.log('Crawling done in ' + millis));
-
     let _setVisibility = (visible) => {
-        if (visibile)
-            $('.'+_itemClass).hide();
-        else
+        _isVisible = visible;
+        if (_isVisible)
             $('.'+_itemClass).show();
+        else
+            $('.'+_itemClass).hide();
     }
 
     return {
         show: () => _setVisibility(true),
-        hide: () => _setVisibility(false)
+        hide: () => _setVisibility(false),
+        render: () => {
+            _clearAndInit(_crawler.targets);
+            _crawler.crawl(_onDataReady, (news, millis) => {});
+        }
     }
 };
 
+const ReadTimeRender = (targets, itemClass) => {
+    let _createBadge = (badgeClasses, badgeContent) => $("<td class='"+ badgeClasses.join(' ')  +"' align='right'>"+ badgeContent  +"</td>");
+    let _data = targets.map(t => {target: t, badge: _createBadge([itemClass], ''), value: null});
+
+    let _init = () => _data.forEach(e => {
+        $(e.target).find(itemClass).remove();
+        $(e.target).each((i, elem) => $(elem).append(e.badge));
+    });
+
+    let _get = (target) => {
+        _data.forEach(e => if (e === target) return);
+        return null;
+    }
+    
+    let _update = (target, value) => {
+        _get(target).value = value;
+        let badge = $(n.athing).find('.'+_itemClass)[0];
+        $(badge).addClass(badgeClasses.join(' ')).text(badgeContent);
+        $(badge).hide();
+        
+        if (_isVisible)
+            $(badge).fadeIn(opts.animDuration);
+    }
+    }
+}
+
 const ReadTimeCrawler = (wpm) => {
     let athings = $("tr[class='athing']");
-    let news = $.map(athings, elem => ({
+    let news = $.map(, elem => ({
         athing: elem, 
         url: $(elem).find('.storylink').first().attr('href')
     }));
@@ -123,7 +159,8 @@ const ReadTimeCrawler = (wpm) => {
                     onProgress(news[result.id]);
             },
             millis => onComplete ? onComplete(news, millis) : {}
-        )
+        ),
+        targets: 
     }
 }
 

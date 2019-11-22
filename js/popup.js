@@ -5,7 +5,6 @@ $(document).ready(function(){
     $('#btn-options').on('click', () => chrome.runtime.openOptionsPage());
     $('#btn-enable').change(function(){
         actions.enable = $(this).prop('checked');
-        console.log(actions.showReadTime);
         signalContentScript(actions);
     });
 });
