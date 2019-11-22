@@ -15,33 +15,33 @@ $(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
 );
 
 const HNReadTime = (opts) => {
+    let _visibility = true;
     let _crawler = ReadTimeCrawler(opts.wpm);
     let _render = ReadTimeRender('hnrt-badge', opts.placeholder, opts.animDuration);
     let _data = $.map($("tr[class='athing']"), elem => ({
         url: $(elem).find('.storylink').first().attr('href'),
-        container: elem
+        container: elem,
+        badge: _render.initTarget(elem)
     }));
 
-    let _init = () => _data.forEach(elem => elem.badge = _render.initTarget(elem.container));
 
-    let _update = (elem) => _crawler.crawl(elem.url, metrics => {
+    let _fetch = (elem, callback) =>_crawler.crawl(elem.url, metrics => {
         elem.value = metrics.crawledReadTime || metrics.wordsReadTime;
-        
-        let badgeClasses = [];
-        if (metrics.crawledReadTime)
-            badgeClasses.push('hnrt-crawled');
-        
-        _render.update(elem.badge, elem.value, badgeClasses);
+        elem.isCrawled = metrics.crawledReadTime ? true : false;
+        callback(elem);
     });
 
-    let _updateAll = () => _data.forEach(elem => _update(elem));
-
+    let _update = (elem) => {
+        let classes = elem.isCrawled ? ['hnrt-crawled'] : []
+        if (_visibility)
+            _render.render(elem.badge, elem.value, classes);
+    }
+    
     return {
-        render: () => {
-            _init();
-            _updateAll();
-        },
-        refresh: () => _updateAll(),
+        render: () => _data.forEach(e => _fetch(e, (elem) => _update(elem))),
+        setVisibility: (value) => {
+            _visibility = value;
+        }
     }
 };
 
@@ -67,7 +67,7 @@ const ReadTimeRender = (itemClass, placeholder, animDuration) => {
 
     return{
         initTarget: (athing) => _init(athing),
-        update: (target, value) => _update(target, value)
+        render: (target, value) => _update(target, value),
     }
 }
 
