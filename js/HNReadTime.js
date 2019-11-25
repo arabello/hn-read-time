@@ -17,9 +17,11 @@ const HNReadTime = (opts) => {
     let _visibility = true;
     let _crawler = ReadTimeCrawler(opts.wpm);
     let _render = ReadTimeRender('hnrt-badge', opts.placeholder, opts.animDuration);
-    let _data = $.map($("tr[class='athing']"), elem => ({
+    let _data = $.map($("tr[class='athing']"), (elem, i) => ({
+        index: i,
         url: $(elem).find('.storylink').first().attr('href'),
         container: elem,
+        container_sibilings: $(elem).nextUntil("tr[class='athing']"),
         badge: _render.initTarget(elem)
     }));
 
@@ -40,11 +42,23 @@ const HNReadTime = (opts) => {
         _visibility = value;
         _data.forEach(e => _visibility ? _update(e) : $(e.badge).fadeOut(opts.animDuration));
     }
+
+    let _sort = (type) => {
+        let copy = _data.slice();
+        let target = $("table[class='itemlist']").find('tbody');
+        target.empty();
+        switch(type){
+            case 'none':
+                copy.forEach(elem => target.append(elem.container).append(elem.container_sibilings));
+                break;
+        }
+    }
     
     return {
         render: () => _data.forEach(e => _fetch(e, (elem) => _update(elem))),
         handle: (actions) => {
             _setVisibility(actions.enable);
+            _sort(actions.sort)
         }
     }
 };
