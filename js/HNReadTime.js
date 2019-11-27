@@ -25,7 +25,6 @@ const HNReadTime = (opts) => {
         badge: _render.initTarget(elem)
     }));
 
-
     let _fetch = (elem, callback) =>_crawler.crawl(elem.url, metrics => {
         elem.value = metrics.crawledReadTime || metrics.wordsReadTime;
         elem.isCrawled = metrics.crawledReadTime ? true : false;
@@ -45,20 +44,28 @@ const HNReadTime = (opts) => {
 
     let _sort = (type) => {
         let copy = _data.slice();
+        // TODO: Don't affect the more link in the end of the page
+        let morelink = copy[copy.length-1].container_sibilings[copy[copy.length-1].container_sibilings.length -1];
+        copy[copy.length-1].container_sibilings.splice(copy[copy.length-1].container_sibilings.length-1 ,1);
         let target = $("table[class='itemlist']").find('tbody');
         target.empty();
         switch(type){
-            case 'none':
-                copy.forEach(elem => target.append(elem.container).append(elem.container_sibilings));
+            case 'ascending':
+                copy.sort((a, b) => a.value - b.value);
+                break;
+            case 'descending':
+                copy.sort((a, b) => b.value - a.value);
                 break;
         }
+        copy.forEach(elem => target.append(elem.container).append(elem.container_sibilings));
+        target.append(morelink);
     }
     
     return {
         render: () => _data.forEach(e => _fetch(e, (elem) => _update(elem))),
         handle: (actions) => {
-            _setVisibility(actions.enable);
             _sort(actions.sort)
+            _setVisibility(actions.enable);
         }
     }
 };
