@@ -13,6 +13,7 @@ $(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
     })
 );
 
+// TODO: Fix actions handling while fetching inconsistency
 const HNReadTime = (opts) => {
     let _visibility = true;
     let _crawler = ReadTimeCrawler(opts.wpm);
@@ -21,9 +22,10 @@ const HNReadTime = (opts) => {
         index: i,
         url: $(elem).find('.storylink').first().attr('href'),
         container: elem,
-        container_sibilings: $(elem).nextUntil("tr[class='athing']"),
+        container_sibilings: $(elem).nextUntil("tr[class='athing'], tr[class='morespace']"),
         badge: _render.initTarget(elem)
     }));
+    let _contentTail = [$("tr[class='morespace']"), $("tr[class='morespace']").next()];
 
     let _fetch = (elem, callback) =>_crawler.crawl(elem.url, metrics => {
         elem.value = metrics.crawledReadTime || metrics.wordsReadTime;
@@ -43,22 +45,21 @@ const HNReadTime = (opts) => {
     }
 
     let _sort = (type) => {
-        let copy = _data.slice();
-        // TODO: Don't affect the more link in the end of the page
-        let morelink = copy[copy.length-1].container_sibilings[copy[copy.length-1].container_sibilings.length -1];
-        copy[copy.length-1].container_sibilings.splice(copy[copy.length-1].container_sibilings.length-1 ,1);
         let target = $("table[class='itemlist']").find('tbody');
         target.empty();
         switch(type){
+            case 'none':
+                _data.sort((a, b) => a.index - b.index);
+                break;
             case 'ascending':
-                copy.sort((a, b) => a.value - b.value);
+                _data.sort((a, b) => a.value ? a.value - b.value : b.value);
                 break;
             case 'descending':
-                copy.sort((a, b) => b.value - a.value);
+                _data.sort((a, b) => b.value - a.value);
                 break;
         }
-        copy.forEach(elem => target.append(elem.container).append(elem.container_sibilings));
-        target.append(morelink);
+        _data.forEach(elem => target.append(elem.container).append(elem.container_sibilings));
+        $(target).append(_contentTail);
     }
     
     return {
