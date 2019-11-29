@@ -3,7 +3,7 @@ $(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
         Object.keys(userSettings).map((k,i) => userSettings[k] = userSettings[k].value);
         let eng = HNReadTime(userSettings);
 
-        eng.render();
+        eng.fetchAll();
         chrome.storage.onChanged.addListener((changes, namespace) => {
             if (namespace != 'local')
                 return;
@@ -13,7 +13,6 @@ $(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
     })
 );
 
-// TODO: Fix actions handling while fetching inconsistency
 const HNReadTime = (opts) => {
     let _visibility = true;
     let _crawler = ReadTimeCrawler(opts.wpm);
@@ -41,7 +40,7 @@ const HNReadTime = (opts) => {
 
     let _setVisibility = (value) => {
         _visibility = value;
-        _data.forEach(e => _visibility ? _update(e) : $(e.badge).fadeOut(opts.animDuration));
+        _data.forEach(e => _visibility ? _update(e) : $(e.badge).hide());
     }
 
     let _sort = (type) => {
@@ -63,7 +62,15 @@ const HNReadTime = (opts) => {
     }
     
     return {
-        render: () => _data.forEach(e => _fetch(e, (elem) => _update(elem))),
+        fetchAll: (onComplete) => {
+            var c = 0;
+            _data.forEach(e => _fetch(e, elem => {
+                _update(elem);
+                c = c+1;
+                if (c == _data.length-1)
+                    onComplete();
+            }));
+        },
         handle: (actions) => {
             _sort(actions.sort)
             _setVisibility(actions.enable);
@@ -87,8 +94,9 @@ const ReadTimeRender = (itemClass, placeholder, animDuration) => {
         let unit = value ? "'" : '';
         let content = (value || placeholder) + unit
         $(target).addClass(classes).text(content);
-        $(target).fadeOut(animDuration/4);
-        $(target).fadeIn(3*animDuration/4);
+        $(target).show();
+        //$(target).fadeOut(animDuration/4);
+        //$(target).fadeIn(3*animDuration/4);
     }
 
     return{
