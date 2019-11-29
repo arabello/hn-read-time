@@ -10,6 +10,10 @@
     font-size: 0.9rem; }
 
 .hnrt-popup {
-  width: 300px; }
+  width: 320px; }
+  .hnrt-popup #filter-reset {
+    text-decoration: underline; }
+    .hnrt-popup #filter-reset:hover {
+      cursor: pointer; }
 
 /*# sourceMappingURL=build.css.map */

@@ -60,9 +60,20 @@ const HNReadTime = (opts) => {
         _data.forEach(elem => target.append(elem.container).append(elem.container_sibilings));
         $(target).append(_contentTail);
     }
+
+    let _filter = (topLimit) => {
+        topLimit = parseInt(topLimit);
+        if (topLimit < 0)
+            return;
+
+        let target = $("table[class='itemlist']").find('tbody');
+        target.empty();
+        _data.forEach(elem => elem.value <= topLimit ? target.append(elem.container).append(elem.container_sibilings) : '');
+        $(target).append(_contentTail);
+    }
     
     return {
-        fetchAll: (onComplete) => {
+        fetchAll: (onComplete=()=>{}) => {
             var c = 0;
             _data.forEach(e => _fetch(e, elem => {
                 _update(elem);
@@ -72,8 +83,12 @@ const HNReadTime = (opts) => {
             }));
         },
         handle: (actions) => {
-            _sort(actions.sort)
             _setVisibility(actions.enable);
+
+            if (!actions.enable)
+                return;
+            _sort(actions.sort)
+            _filter(actions.filter);
         }
     }
 };

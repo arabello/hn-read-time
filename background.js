@@ -27,7 +27,8 @@ let storage = {
 let localStorage = {
     actions:{
         enable: true,
-        sort: 'none'
+        sort: 'none',
+        filter: -1 // don't filter
     }
 }
 

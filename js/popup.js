@@ -4,12 +4,24 @@ $(document).ready(() => chrome.storage.local.get('actions', (results) => {
     let sortStateIndex = sortState.indexOf(actions.sort);
     let btnSortState = Iterator(sortState, sortStateIndex);
 
+    // Filter
+    $("#filter").val(actions.filter);
+    $("#filter").on('change', () => {
+        actions.filter = $("#filter").val() < 0 ? -1 : $("#filter").val();
+        save(actions);
+    });
+    $("#filter-reset").on('click', () => {
+        actions.filter = -1;
+        $("#filter").val(-1);
+        save(actions);
+    });
+
     // Sort button
     $('#btn-sort').text(sortState[sortStateIndex]);
     $('#btn-sort').on('click', () =>{
         let type = btnSortState.next();
         actions.sort = type;
-        chrome.storage.local.set({'actions': actions});
+        save(actions);
         $('#btn-sort').text(type);
     });
 
@@ -17,12 +29,14 @@ $(document).ready(() => chrome.storage.local.get('actions', (results) => {
     $('#btn-enable').bootstrapToggle(actions.enable ? 'on' : 'off');
     $('#btn-enable').change(function(){
         actions.enable = $(this).prop('checked');
-        chrome.storage.local.set({'actions': actions});
+        save(actions);
     });
 
     // Options link
     $('#btn-options').on('click', () => chrome.runtime.openOptionsPage());
 }));
+
+const save = (actions) => chrome.storage.local.set({'actions': actions})
 
 const Iterator = (states, initIndex=0) => {
     let _counter = initIndex;
