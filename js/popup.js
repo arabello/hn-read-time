@@ -3,7 +3,7 @@ $(document).ready(() => chrome.storage.local.get('actions', (results) => {
     let sortState = ['none', 'ascending', 'descending'];
     let sortStateIndex = sortState.indexOf(actions.sort);
     let btnSortState = Iterator(sortState, sortStateIndex);
-
+    
     // Filter
     $("#filter").val(actions.filter);
     $("#filter").on('change', () => {

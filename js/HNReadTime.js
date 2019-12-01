@@ -1,14 +1,16 @@
 $(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
         let userSettings = storage.userSettings;
         Object.keys(userSettings).map((k,i) => userSettings[k] = userSettings[k].value);
+
         let eng = HNReadTime(userSettings);
 
-        eng.fetchAll();
+        chrome.storage.local.get('actions', results => eng.fetchAll(elem => eng.render(results.actions)));
+
         chrome.storage.onChanged.addListener((changes, namespace) => {
             if (namespace != 'local')
                 return;
 
-            eng.handle(changes['actions'].newValue)
+            eng.render(changes['actions'].newValue)
         });
     })
 );
@@ -22,30 +24,19 @@ const HNReadTime = (opts) => {
         url: $(elem).find('.storylink').first().attr('href'),
         container: elem,
         container_sibilings: $(elem).nextUntil("tr[class='athing'], tr[class='morespace']"),
-        badge: _render.initTarget(elem)
+        badge: _render.initTarget(elem),
+        filtered: true
     }));
     let _contentTail = [$("tr[class='morespace']"), $("tr[class='morespace']").next()];
 
-    let _fetch = (elem, callback) =>_crawler.crawl(elem.url, metrics => {
+    let _fetch = (elem, callback) => _crawler.crawl(elem.url, metrics => {
         elem.value = metrics.crawledReadTime || metrics.wordsReadTime;
         elem.isCrawled = metrics.crawledReadTime ? true : false;
         callback(elem);
     });
 
-    let _update = (elem) => {
-        let classes = elem.isCrawled ? ['hnrt-crawled'] : []
-        if (_visibility)
-            _render.render(elem.badge, elem.value, classes);
-    }
-
-    let _setVisibility = (value) => {
-        _visibility = value;
-        _data.forEach(e => _visibility ? _update(e) : $(e.badge).hide());
-    }
 
     let _sort = (type) => {
-        let target = $("table[class='itemlist']").find('tbody');
-        target.empty();
         switch(type){
             case 'none':
                 _data.sort((a, b) => a.index - b.index);
@@ -57,38 +48,49 @@ const HNReadTime = (opts) => {
                 _data.sort((a, b) => b.value - a.value);
                 break;
         }
-        _data.forEach(elem => target.append(elem.container).append(elem.container_sibilings));
-        $(target).append(_contentTail);
     }
 
     let _filter = (topLimit) => {
         topLimit = parseInt(topLimit);
-        if (topLimit < 0)
+        if (topLimit < 0){
+            _data.forEach(elem => elem.filtered = true);
             return;
+        }
 
-        let target = $("table[class='itemlist']").find('tbody');
-        target.empty();
-        _data.forEach(elem => elem.value <= topLimit ? target.append(elem.container).append(elem.container_sibilings) : '');
-        $(target).append(_contentTail);
+        _data.forEach(elem => elem.filtered = elem.value <= topLimit);
     }
     
     return {
-        fetchAll: (onComplete=()=>{}) => {
+        fetchAll: (onProgress= () => {}, onComplete=()=>{}) => {
             var c = 0;
             _data.forEach(e => _fetch(e, elem => {
-                _update(elem);
                 c = c+1;
+                onProgress(elem);
                 if (c == _data.length-1)
                     onComplete();
             }));
         },
-        handle: (actions) => {
-            _setVisibility(actions.enable);
+        render: (actions) => {
+            _visibility = actions.enable;
 
-            if (!actions.enable)
+            if (!_visibility){
+                _data.forEach(e => $(e.badge).hide());
                 return;
+            }
+
             _sort(actions.sort)
             _filter(actions.filter);
+
+            let target = $("table[class='itemlist']").find('tbody');
+            target.empty();
+             _data.forEach(elem => {
+                 if (!elem.filtered)
+                     return;
+
+                 target.append(elem.container).append(elem.container_sibilings);
+                _render.render(elem.badge, elem.value, elem.isCrawled ? ['hnrt-crawled'] : []);
+             });
+            $(target).append(_contentTail);
         }
     }
 };
