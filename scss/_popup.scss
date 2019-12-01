@@ -1,0 +1,11 @@
+.hnrt-popup{
+    width: 320px;
+    
+    #filter-reset{
+        text-decoration: underline;
+
+        &:hover{
+            cursor: pointer;
+        }
+    }
+}
