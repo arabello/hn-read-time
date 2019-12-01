@@ -26,9 +26,9 @@ $(document).ready(() => chrome.storage.local.get('actions', (results) => {
     });
 
     // Enable button
-    $('#btn-enable').bootstrapToggle(actions.enable ? 'on' : 'off');
-    $('#btn-enable').change(function(){
-        actions.enable = $(this).prop('checked');
+    $('#btn-show-badge').bootstrapToggle(actions.showBadge ? 'on' : 'off');
+    $('#btn-show-badge').change(function(){
+        actions.showBadge = $(this).prop('checked');
         save(actions);
     });
 

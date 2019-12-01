@@ -16,7 +16,6 @@ $(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
 );
 
 const HNReadTime = (opts) => {
-    let _visibility = true;
     let _crawler = ReadTimeCrawler(opts.wpm);
     let _render = ReadTimeRender('hnrt-badge', opts.placeholder, opts.animDuration);
     let _data = $.map($("tr[class='athing']"), (elem, i) => ({
@@ -71,13 +70,6 @@ const HNReadTime = (opts) => {
             }));
         },
         render: (actions) => {
-            _visibility = actions.enable;
-
-            if (!_visibility){
-                _data.forEach(e => $(e.badge).hide());
-                return;
-            }
-
             _sort(actions.sort)
             _filter(actions.filter);
 
@@ -91,6 +83,9 @@ const HNReadTime = (opts) => {
                 _render.render(elem.badge, elem.value, elem.isCrawled ? ['hnrt-crawled'] : []);
              });
             $(target).append(_contentTail);
+
+            console.log(actions);
+            _data.forEach(e => actions.showBadge ? $(e.badge).show() : $(e.badge).hide());
         }
     }
 };
@@ -102,7 +97,6 @@ const ReadTimeRender = (itemClass, placeholder, animDuration) => {
     let _init = (container) => {
         $(container).find(itemClass).remove();
         let target = _createTarget([itemClass], '');
-        $(target).hide();
         $(container).append(target);
         return target;
     };
@@ -111,9 +105,6 @@ const ReadTimeRender = (itemClass, placeholder, animDuration) => {
         let unit = value ? "'" : '';
         let content = (value || placeholder) + unit
         $(target).addClass(classes).text(content);
-        $(target).show();
-        //$(target).fadeOut(animDuration/4);
-        //$(target).fadeIn(3*animDuration/4);
     }
 
     return{

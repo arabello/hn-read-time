@@ -26,7 +26,7 @@ let storage = {
 
 let localStorage = {
     actions:{
-        enable: true,
+        showBadge: true,
         sort: 'none',
         filter: -1 // don't filter
     }
