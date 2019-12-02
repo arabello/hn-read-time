@@ -4,7 +4,12 @@ $(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
 
         let eng = HNReadTime(userSettings);
 
-        chrome.storage.local.get('actions', results => eng.fetchAll(elem => eng.render(results.actions)));
+        chrome.storage.local.get('actions', 
+            results => eng.fetchAll(
+                elem => eng.render(results.actions),
+                () => console.log('Completed')
+            )
+        );
 
         chrome.storage.onChanged.addListener((changes, namespace) => {
             if (namespace != 'local')
@@ -15,7 +20,6 @@ $(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
     })
 );
 
-// TODO Differentiate unfetched data (empty) render from null data (placeholder)
 const HNReadTime = (opts) => {
     let _crawler = ReadTimeCrawler(opts.wpm);
     let _render = ReadTimeRender('hnrt-badge', opts.placeholder, opts.animDuration);
@@ -25,13 +29,17 @@ const HNReadTime = (opts) => {
         container: elem,
         container_sibilings: $(elem).nextUntil("tr[class='athing'], tr[class='morespace']"),
         badge: _render.initTarget(elem),
-        filtered: true
+        filtered: true,
+        fetched: false
     }));
     let _contentTail = [$("tr[class='morespace']"), $("tr[class='morespace']").next()];
 
     let _fetch = (elem, callback) => _crawler.crawl(elem.url, metrics => {
         elem.value = metrics.crawledReadTime || metrics.wordsReadTime;
         elem.isCrawled = metrics.crawledReadTime ? true : false;
+        elem.fetched = true;
+        let classes = elem.isCrawled ? ['hnrt-crawled'] : [];
+        _render.render(elem.badge, elem.value, classes);
         callback(elem);
     });
 
@@ -45,7 +53,7 @@ const HNReadTime = (opts) => {
                 _data.sort((a, b) => a.value ? a.value - b.value : b.value);
                 break;
             case 'descending':
-                _data.sort((a, b) => b.value - a.value);
+                _data.sort((a, b) => b.value ? b.value - a.value : a.value);
                 break;
         }
     }
@@ -81,11 +89,10 @@ const HNReadTime = (opts) => {
                      return;
 
                  target.append(elem.container).append(elem.container_sibilings);
-                 let classes = elem.isCrawled ? ['hnrt-crawled'] : [];
-                _render.render(elem.badge, elem.value, classes);
-             });
-            $(target).append(_contentTail);
 
+             });
+
+            $(target).append(_contentTail);
             _data.forEach(e => actions.showBadge ? $(e.badge).show() : $(e.badge).hide());
         }
     }
