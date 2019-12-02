@@ -15,6 +15,7 @@ $(document).ready( () => chrome.storage.sync.get('userSettings', storage => {
     })
 );
 
+// TODO Differentiate unfetched data (empty) render from null data (placeholder)
 const HNReadTime = (opts) => {
     let _crawler = ReadTimeCrawler(opts.wpm);
     let _render = ReadTimeRender('hnrt-badge', opts.placeholder, opts.animDuration);
@@ -80,11 +81,11 @@ const HNReadTime = (opts) => {
                      return;
 
                  target.append(elem.container).append(elem.container_sibilings);
-                _render.render(elem.badge, elem.value, elem.isCrawled ? ['hnrt-crawled'] : []);
+                 let classes = elem.isCrawled ? ['hnrt-crawled'] : [];
+                _render.render(elem.badge, elem.value, classes);
              });
             $(target).append(_contentTail);
 
-            console.log(actions);
             _data.forEach(e => actions.showBadge ? $(e.badge).show() : $(e.badge).hide());
         }
     }
@@ -103,13 +104,13 @@ const ReadTimeRender = (itemClass, placeholder, animDuration) => {
 
     let _update = (target, value, classes=[]) => {
         let unit = value ? "'" : '';
-        let content = (value || placeholder) + unit
-        $(target).addClass(classes).text(content);
+        let content = (value || placeholder) + unit;
+        $(target).addClass(classes.join(' ')).text(content);
     }
 
     return{
         initTarget: (athing) => _init(athing),
-        render: (target, value) => _update(target, value),
+        render: (target, value, classes) => _update(target, value, classes),
     }
 }
 
@@ -130,7 +131,7 @@ const ReadTimeCrawler = (wpm) => {
 
 const ComputeMetrics = (htmlString, wpm) => {
     let _wordsRegExp = /\S+/g;
-    let _crawlTimeRegExp = /\d+\smin.?\sread|read\stime\s\d+|\d+\sminutes\sread\stime/i;
+    let _crawlTimeRegExp = /\d+\smin.?\sread|read\stime\s\d+|\d+\sminutes?\sread/i;
     let _parser = new DOMParser();
     let _html = _parser.parseFromString(htmlString, 'text/html');
     let _body = $(_html.getElementsByTagName('body')[0]);
