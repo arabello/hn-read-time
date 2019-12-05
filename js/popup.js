@@ -3,6 +3,14 @@ $(document).ready(() => chrome.storage.local.get('actions', (results) => {
     let sortState = ['none', 'ascending', 'descending'];
     let sortStateIndex = sortState.indexOf(actions.sort);
     let btnSortState = Iterator(sortState, sortStateIndex);
+
+    // Show user placeholder as legend
+    chrome.storage.sync.get('userSettings', results => {
+        settings = results['userSettings'];
+        placeholder = settings.placeholder.value;
+        console.log(placeholder);
+        $('#legend-placeholder').text(placeholder);
+    });
     
     // Filter
     $("#filter").val(actions.filter);

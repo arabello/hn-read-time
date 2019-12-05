@@ -15,5 +15,7 @@
     text-decoration: underline; }
     .hnrt-popup #filter-reset:hover {
       cursor: pointer; }
+  .hnrt-popup .hnrt-legend {
+    font-size: 0.8rem; }
 
 /*# sourceMappingURL=build.css.map */
