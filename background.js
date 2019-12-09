@@ -7,6 +7,7 @@ let storage = {
             title: "Words per minute",
             desc: "Affect the article read time estimation"
         },
+        /* Unused
         animDuration: {
             type: "number",
             value: 350,
@@ -14,6 +15,7 @@ let storage = {
             title: "Animation duration",
             desc: "Smooth data entrance in millis"
         },
+        */
         placeholder: {
             type: "text",
             value: "¯\\_(ツ)_/¯",
