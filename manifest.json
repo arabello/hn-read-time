@@ -1,9 +1,11 @@
 {
     "name": "Hacker News Read Time",
+    "short_name": "HNRT",
     "version": "0.0.1",
-    "description": "Enhance your HN user experience with article read time preview.",
+    "description": "Enhance your HN user experience with article read time preview",
     "manifest_version": 2,
     "permissions": ["<all_urls>", "storage", "declarativeContent"],
+    "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",
     "background":{
         "scripts": ["vendor/js/jquery-3.4.1.min.js", "background.js"],
         "persisten": false
